@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Finance Tracker 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=Nunito:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:#0e0e12;--surface:#16161d;--surface2:#1e1e28;--surface3:#252532;
+  --border:#2e2e3e;--accent:#6c63ff;--accent2:#2ecc71;--danger:#e74c3c;
+  --warn:#f39c12;--blue:#3498db;--teal:#1abc9c;--purple:#9b59b6;
+  --text:#f0f0f8;--muted:#7070a0;--muted2:#4a4a6a;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;min-height:100vh;}
+
+/* NAV */
+.nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;display:flex;align-items:center;gap:0;position:sticky;top:0;z-index:100;flex-wrap:wrap;}
+.nav-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:15px;background:linear-gradient(135deg,var(--accent),var(--teal));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-right:16px;padding:14px 0;white-space:nowrap;}
+.nav-tabs{display:flex;gap:0;flex:1;overflow-x:auto;}
+.nav-tab{padding:14px 14px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap;font-family:'DM Mono',monospace;}
+.nav-tab:hover{color:var(--text);}
+.nav-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.nav-right{display:flex;align-items:center;gap:6px;padding:10px 0;flex-shrink:0;}
+
+/* SYNC BUTTON */
+.sync-btn{display:flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:8px;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;}
+.sync-btn:hover{border-color:var(--accent);color:var(--accent);}
+.sync-btn.syncing{border-color:var(--warn);color:var(--warn);animation:pulse 1s infinite;}
+.sync-btn.synced{border-color:var(--accent2);color:var(--accent2);}
+.sync-btn.error{border-color:var(--danger);color:var(--danger);}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:currentColor;}
+
+/* SETUP BANNER */
+.setup-banner{background:rgba(108,99,255,.1);border:1px solid rgba(108,99,255,.3);border-radius:12px;padding:16px 20px;margin:20px;display:flex;align-items:flex-start;gap:14px;}
+.setup-banner.hidden{display:none;}
+.setup-icon{font-size:22px;flex-shrink:0;}
+.setup-content{flex:1;}
+.setup-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:6px;color:var(--accent);}
+.setup-text{font-size:12px;color:var(--muted);line-height:1.7;}
+.setup-url-row{display:flex;align-items:center;gap:8px;margin-top:10px;}
+.setup-url-input{flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'DM Mono',monospace;font-size:11px;padding:8px 12px;border-radius:8px;outline:none;max-width:480px;}
+.setup-url-input:focus{border-color:var(--accent);}
+.setup-save-btn{background:var(--accent);color:#fff;border:none;padding:8px 16px;border-radius:8px;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;}
+.setup-save-btn:hover{opacity:.85;}
+
+/* VIEWS */
+.view{display:none;padding:20px;max-width:1200px;margin:0 auto;}
+.view.active{display:block;}
+
+/* KPI */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:20px;}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:14px;}
+.kpi-label{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:5px;}
+.kpi-val{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;letter-spacing:-.5px;}
+.kpi-val.red{color:var(--danger)}.kpi-val.green{color:var(--accent2)}.kpi-val.gold{color:var(--warn)}.kpi-val.teal{color:var(--teal)}
+.kpi-sub{font-size:10px;color:var(--muted);margin-top:2px;}
+
+/* ROAST */
+.roast-bar{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:11px 15px;margin-bottom:16px;font-size:12.5px;font-weight:600;}
+.roast-bar.bad{border-left:3px solid var(--danger);color:#f08;}
+.roast-bar.ok{border-left:3px solid var(--warn);color:var(--warn);}
+.roast-bar.good{border-left:3px solid var(--accent2);color:var(--accent2);}
+
+/* TWO COL */
+.two-col{display:grid;grid-template-columns:1fr 340px;gap:14px;align-items:start;}
+@media(max-width:900px){.two-col{grid-template-columns:1fr;}}
+
+/* CARD */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:16px;margin-bottom:14px;}
+.card-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:12px;}
+
+/* FORM */
+.type-tabs{display:flex;background:var(--surface2);border-radius:9px;overflow:hidden;margin-bottom:11px;}
+.type-tab{flex:1;padding:7px 3px;border:none;background:transparent;color:var(--muted);font-size:10.5px;font-weight:600;cursor:pointer;transition:all .15s;font-family:'Nunito',sans-serif;}
+.type-tab.active{color:#fff;border-radius:7px;margin:2px;}
+.type-tab[data-t="expense"].active{background:var(--danger);}
+.type-tab[data-t="income"].active{background:var(--accent2);}
+.type-tab[data-t="saving"].active{background:var(--teal);}
+.type-tab[data-t="hutang"].active{background:var(--purple);}
+.type-tab[data-t="piutang"].active{background:var(--blue);}
+.fg{display:flex;flex-direction:column;gap:4px;margin-bottom:9px;}
+.fl{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;}
+.fi,.fs{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Nunito',sans-serif;font-size:12.5px;padding:8px 10px;border-radius:8px;outline:none;width:100%;transition:border-color .15s;}
+.fi:focus,.fs:focus{border-color:var(--accent);}
+.fs option{background:var(--surface);}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.add-btn{width:100%;background:var(--accent);color:#fff;border:none;padding:10px;border-radius:8px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:opacity .15s;}
+.add-btn:hover{opacity:.85;}
+
+/* CAT */
+.cat-row{display:flex;align-items:center;gap:9px;padding:6px 0;border-bottom:1px solid var(--surface2);}
+.cat-row:last-child{border:none;}
+.cat-icon{font-size:15px;width:20px;text-align:center;flex-shrink:0;}
+.cat-info{flex:1;min-width:0;}
+.cat-name{font-size:11.5px;font-weight:600;}
+.cat-bar-wrap{height:3px;background:var(--surface3);border-radius:3px;margin-top:2px;}
+.cat-bar-fill{height:100%;border-radius:3px;transition:width .4s;}
+.cat-amt{font-family:'DM Mono',monospace;font-size:10.5px;font-weight:500;flex-shrink:0;}
+.cat-pct{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);width:28px;text-align:right;}
+
+/* TX */
+.tx-filter-row{display:flex;gap:5px;margin-bottom:10px;flex-wrap:wrap;}
+.tf{padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:10.5px;font-family:'DM Mono',monospace;cursor:pointer;transition:all .15s;}
+.tf.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+.tx-list{display:flex;flex-direction:column;gap:4px;max-height:420px;overflow-y:auto;padding-right:3px;}
+.tx-list::-webkit-scrollbar{width:3px;}
+.tx-list::-webkit-scrollbar-thumb{background:var(--muted2);border-radius:3px;}
+.tx-item{background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:9px 12px;display:flex;align-items:center;gap:9px;animation:fadeIn .2s;}
+.tx-item:hover{border-color:var(--muted2);}
+@keyframes fadeIn{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+.tx-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.tx-body{flex:1;min-width:0;}
+.tx-desc{font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.tx-meta{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:1px;}
+.tx-amt{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;flex-shrink:0;}
+.tx-del{background:none;border:none;color:var(--muted2);cursor:pointer;font-size:12px;opacity:0;transition:opacity .15s;padding:2px 4px;}
+.tx-item:hover .tx-del{opacity:1;}
+.tx-del:hover{color:var(--danger);}
+.tx-empty{text-align:center;padding:24px;color:var(--muted);font-style:italic;font-size:12px;}
+
+/* HP */
+.hp-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.hp-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;}
+.hp-title{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px;}
+.hp-item{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--surface3);font-size:11.5px;gap:6px;}
+.hp-item:last-child{border:none;}
+.hp-name{font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.hp-amt{font-family:'DM Mono',monospace;font-size:10.5px;font-weight:600;}
+.hp-empty{font-size:11px;color:var(--muted);text-align:center;padding:6px 0;font-style:italic;}
+
+/* ALLOC */
+.alloc-row{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;}
+.alloc-pill{background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:4px 10px;font-size:10.5px;font-family:'DM Mono',monospace;display:flex;align-items:center;gap:5px;}
+.alloc-dot{width:7px;height:7px;border-radius:50%;}
+
+/* ANNUAL */
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:16px;margin-bottom:14px;}
+.chart-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:12px;}
+.chart-wrap{position:relative;height:260px;}
+.annual-kpi{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:20px;}
+.annual-big{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;letter-spacing:-.5px;}
+.annual-big.red{color:var(--danger)}.annual-big.green{color:var(--accent2)}.annual-big.teal{color:var(--teal)}.annual-big.warn{color:var(--warn)}
+.annual-cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;margin-bottom:14px;}
+.annual-cat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;}
+
+/* SETTINGS */
+.fx-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.fx-pair{background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:11px;}
+.fx-label{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:5px;}
+.save-fx-btn{background:var(--accent);color:#fff;border:none;padding:8px 18px;border-radius:7px;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;margin-top:10px;}
+.save-fx-btn:hover{opacity:.85;}
+
+/* TOAST */
+.toast{position:fixed;bottom:18px;right:18px;background:var(--accent2);color:#0e0e12;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;padding:8px 16px;border-radius:30px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999;box-shadow:0 4px 20px rgba(0,0,0,.3);}
+.toast.show{opacity:1;}
+
+@media(max-width:600px){.form-row{grid-template-columns:1fr;}.kpi-row{grid-template-columns:1fr 1fr;}.hp-grid{grid-template-columns:1fr;}.fx-grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <div class="nav-logo">💰 FinTrack</div>
+  <div class="nav-tabs" id="navTabs"></div>
+  <div class="nav-right">
+    <button class="sync-btn" id="syncBtn" onclick="syncWithSheets()">
+      <div class="sync-dot"></div>
+      <span id="syncLabel">Sync Sheets</span>
+    </button>
+    <div class="nav-tab" style="cursor:pointer" onclick="showView('annual')" id="tabAnnual">📊 Annual</div>
+    <div class="nav-tab" style="cursor:pointer" onclick="showView('settings')" id="tabSettings">⚙</div>
+  </div>
+</div>
+
+<!-- SETUP BANNER -->
+<div class="setup-banner" id="setupBanner">
+  <div class="setup-icon">🔗</div>
+  <div class="setup-content">
+    <div class="setup-title">Hubungkan ke Google Sheets</div>
+    <div class="setup-text">
+      Paste URL Web App dari Google Apps Script lu di sini biar data sinkron ke Sheets.<br>
+      <strong>Cara setup:</strong> Buka Google Sheets → Extensions → Apps Script → paste isi file <code>Code.gs</code> → Save → Deploy as Web App → copy URL-nya ke sini.
+    </div>
+    <div class="setup-url-row">
+      <input class="setup-url-input" id="sheetsUrl" placeholder="https://script.google.com/macros/s/XXXXX/exec">
+      <button class="setup-save-btn" onclick="saveSheetUrl()">Hubungkan</button>
+    </div>
+  </div>
+</div>
+
+<div id="viewsContainer"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── DATA ────────────────────────────────────────────────────
+const SK = 'fintrack_v3';
+const URL_KEY = 'fintrack_sheets_url';
+
+let D = {
+  fx: { VND: 0.6449563664, USD: 16000 },
+  salary: { amount: 56150821, currency: 'IDR' },
+  alloc: { Home:40, Food:30, Transport:7, Saving:10, Entertainment:13 },
+  months: [
+    { id:'2026-01', label:'Jan 2026', currency:'IDR' },
+    { id:'2026-02', label:'Feb 2026', currency:'VND' },
+    { id:'2026-03', label:'Mar 2026', currency:'IDR' },
+  ],
+  transactions: {}
+};
+
+let sheetsUrl = '';
+let activeMonth = '2026-03';
+let txFilter = 'all';
+let currentTxType = 'expense';
+let annualChartInst = null, annualCatChartInst = null;
+
+const CATS = {
+  Home:     { icon:'🏠', color:'#3498db', items:['Groceries','Bills','Internet','Galon','Laundry','Others','BPJS','Family / Loved ones','Kos','Tools'] },
+  Food:     { icon:'🍜', color:'#e74c3c', items:['Meal','Snack and Beverages'] },
+  Transport:{ icon:'🚗', color:'#f39c12', items:['Fuel','Parking','Maintenance','Travel','Ojol','Transum'] },
+  Saving:   { icon:'💰', color:'#1abc9c', items:['Weekly Saving','Monthly Saving','Hutang'] },
+  Entertainment:{ icon:'🎮', color:'#9b59b6', items:['Cinema','Self Care','Subscribe','Entertain','Socialize Drink','Clothes and shoes','Gym Subscription','Sports & Health','Hotel','Book'] },
+  earning:  { icon:'💵', color:'#2ecc71', items:['Salary','Interest','Reimburse','Piutang'] },
+};
+
+const TYPE_COLORS = { expense:'#e74c3c', income:'#2ecc71', saving:'#1abc9c', hutang:'#9b59b6', piutang:'#3498db' };
+
+// ─── LOAD/SAVE ───────────────────────────────────────────────
+function load() {
+  try { const r = localStorage.getItem(SK); if(r) D = {...D, ...JSON.parse(r)}; } catch(e){}
+  sheetsUrl = localStorage.getItem(URL_KEY) || '';
+  if(sheetsUrl) {
+    document.getElementById('setupBanner').classList.add('hidden');
+    document.getElementById('sheetsUrl').value = sheetsUrl;
+    setSyncStatus('idle');
+  }
+}
+
+function saveLocal() { localStorage.setItem(SK, JSON.stringify(D)); }
+
+function saveSheetUrl() {
+  const url = document.getElementById('sheetsUrl').value.trim();
+  if(!url) { alert('URL kosong!'); return; }
+  sheetsUrl = url;
+  localStorage.setItem(URL_KEY, url);
+  document.getElementById('setupBanner').classList.add('hidden');
+  showToast('URL tersimpan! Coba sync sekarang.');
+  setSyncStatus('idle');
+}
+
+// ─── SYNC ────────────────────────────────────────────────────
+function setSyncStatus(status) {
+  const btn = document.getElementById('syncBtn');
+  const lbl = document.getElementById('syncLabel');
+  btn.className = 'sync-btn';
+  if(status === 'syncing') { btn.classList.add('syncing'); lbl.textContent = 'Syncing...'; }
+  else if(status === 'synced') { btn.classList.add('synced'); lbl.textContent = '✓ Synced'; setTimeout(()=>setSyncStatus('idle'),3000); }
+  else if(status === 'error') { btn.classList.add('error'); lbl.textContent = '✗ Error'; setTimeout(()=>setSyncStatus('idle'),4000); }
+  else { lbl.textContent = sheetsUrl ? 'Sync Sheets' : 'Setup Sheets'; }
+}
+
+async function syncWithSheets() {
+  if(!sheetsUrl) { document.getElementById('setupBanner').classList.remove('hidden'); return; }
+  setSyncStatus('syncing');
+  try {
+    // Push local data to Sheets
+    const res = await fetch(sheetsUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'syncAll',
+        data: { transactions: D.transactions, settings: D }
+      })
+    });
+    // Pull latest data from Sheets
+    const getRes = await fetch(sheetsUrl + '?action=getAll');
+    const remote = await getRes.json();
+    if(remote.transactions) {
+      D.transactions = remote.transactions;
+      // Convert string amounts to numbers
+      Object.values(D.transactions).forEach(txs => {
+        txs.forEach(t => { t.amount = parseFloat(t.amount) || 0; t.id = parseInt(t.id) || Date.now(); });
+      });
+    }
+    if(remote.settings) {
+      D.fx = remote.settings.fx || D.fx;
+      D.salary = remote.settings.salary || D.salary;
+      D.alloc = remote.settings.alloc || D.alloc;
+      if(remote.settings.months?.length) D.months = remote.settings.months;
+    }
+    saveLocal();
+    setSyncStatus('synced');
+    buildNav();
+    renderMonth();
+    showToast('Data berhasil disync dari Sheets! ✓');
+  } catch(err) {
+    setSyncStatus('error');
+    showToast('Sync gagal: ' + err.message);
+  }
+}
+
+async function pushTx(tx) {
+  if(!sheetsUrl) return;
+  try {
+    await fetch(sheetsUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'addTransaction', data: tx })
+    });
+  } catch(e) { /* silent fail, data already saved locally */ }
+}
+
+async function deleteTxRemote(id) {
+  if(!sheetsUrl) return;
+  try {
+    await fetch(sheetsUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'deleteTransaction', id: String(id) })
+    });
+  } catch(e) {}
+}
+
+// ─── FX / FORMAT ─────────────────────────────────────────────
+function toIDR(n, cur) { if(cur==='IDR') return n; if(cur==='VND') return n*D.fx.VND; if(cur==='USD') return n*D.fx.USD; return n; }
+function fromIDR(n, cur) { if(cur==='IDR') return n; if(cur==='VND') return n/D.fx.VND; if(cur==='USD') return n/D.fx.USD; return n; }
+
+function fmt(n, cur) {
+  const abs = Math.abs(n);
+  if(cur==='VND') {
+    if(abs>=1000000) return (n/1000000).toFixed(1).replace('.0','')+'jt VND';
+    if(abs>=1000) return (n/1000).toFixed(0)+'rb VND';
+    return Math.round(n)+' VND';
+  } else if(cur==='USD') {
+    return '$'+(abs>=1000?(n/1000).toFixed(1)+'k':n.toFixed(0));
+  } else {
+    if(abs>=1000000000) return 'Rp'+(n/1000000000).toFixed(1)+'M';
+    if(abs>=1000000) return 'Rp'+(n/1000000).toFixed(1)+'jt';
+    if(abs>=1000) return 'Rp'+(n/1000).toFixed(0)+'rb';
+    return 'Rp'+Math.round(n).toLocaleString('id-ID');
+  }
+}
+
+function dateFmt(d) {
+  if(!d) return '—';
+  const [y,m,dd] = d.split('-');
+  return `${dd} ${['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'][+m-1]}`;
+}
+
+function roast(pct) {
+  if(pct>=120) return {cls:'bad',msg:`🔥 BOROS BANGET! Lu udah jebol ${Math.round(pct-100)}% dari budget. Dompet nangis.`};
+  if(pct>=100) return {cls:'bad',msg:`😱 WHOAAAA budget habis! Kurangin pengeluaran sekarang.`};
+  if(pct>=80) return {cls:'ok',msg:`⚠️ Udah ${Math.round(pct)}% dari budget. Rem dikit ya.`};
+  if(pct>=50) return {cls:'ok',msg:`📊 ${Math.round(pct)}% dari budget. Still in control!`};
+  return {cls:'good',msg:`✅ ${Math.round(pct)}% dari budget. That's nice, keep going!`};
+}
+
+// ─── NAV ─────────────────────────────────────────────────────
+function buildNav() {
+  const tabs = document.getElementById('navTabs');
+  tabs.innerHTML = '';
+  D.months.forEach(m => {
+    const t = document.createElement('div');
+    t.className = 'nav-tab'+(m.id===activeMonth?' active':'');
+    t.textContent = m.label;
+    t.onclick = () => { activeMonth=m.id; buildNav(); renderMonth(); showView('month'); };
+    tabs.appendChild(t);
+  });
+}
+
+function showView(v) {
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(el=>el.classList.remove('active'));
+  if(v==='month') { document.getElementById('view-month')?.classList.add('active'); buildNav(); }
+  else if(v==='annual') { document.getElementById('view-annual').classList.add('active'); document.getElementById('tabAnnual').classList.add('active'); renderAnnual(); }
+  else if(v==='settings') { document.getElementById('view-settings').classList.add('active'); document.getElementById('tabSettings').classList.add('active'); renderSettings(); }
+}
+
+// ─── MONTHLY ─────────────────────────────────────────────────
+function ensureViews() {
+  const vc = document.getElementById('viewsContainer');
+  if(!document.getElementById('view-month')) {
+    ['month','annual','settings'].forEach(id => {
+      const d = document.createElement('div');
+      d.className='view'; d.id='view-'+id;
+      if(id==='annual') d.innerHTML = buildAnnualShell();
+      if(id==='settings') d.innerHTML = buildSettingsShell();
+      vc.appendChild(d);
+    });
+  }
+}
+
+function getTxs(mid) { return (D.transactions[mid]||[]); }
+
+function renderMonth() {
+  ensureViews();
+  const mv = document.getElementById('view-month');
+  const m = D.months.find(x=>x.id===activeMonth)||D.months[0];
+  const cur = m.currency||'IDR';
+  const txs = getTxs(activeMonth);
+
+  const income = txs.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const expenses = txs.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  const savings = txs.filter(t=>t.type==='saving').reduce((s,t)=>s+t.amount,0);
+  const remaining = income - expenses;
+  const pct = income>0?(expenses/income)*100:0;
+  const [y,mo] = activeMonth.split('-').map(Number);
+  const daysInMonth = new Date(y,mo,0).getDate();
+  const today = new Date();
+  const daysElapsed = (today.getFullYear()===y&&today.getMonth()+1===mo)?today.getDate():daysInMonth;
+  const avgDaily = daysElapsed>0?expenses/daysElapsed:0;
+  const dailyBudget = income>0?income/daysInMonth:0;
+  const r = roast(pct);
+
+  const catTotals = {};
+  Object.keys(CATS).filter(k=>k!=='earning').forEach(k=>{catTotals[k]=0;});
+  txs.filter(t=>t.type==='expense').forEach(t=>{if(catTotals[t.category]!==undefined)catTotals[t.category]+=t.amount;});
+  const maxCat = Math.max(...Object.values(catTotals),1);
+
+  const allocPills = Object.entries(D.alloc).map(([k,v])=>{
+    const budget=(v/100)*(income||0);
+    const over=income>0&&(catTotals[k]||0)>budget;
+    return `<div class="alloc-pill" style="${over?'border-color:var(--danger)':''}">
+      <div class="alloc-dot" style="background:${CATS[k]?.color||'#888'}"></div>${k} <span style="color:var(--muted)">${v}%</span>${over?'🔴':''}
+    </div>`;
+  }).join('');
+
+  mv.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+      <div style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800">${m.label} <span style="font-weight:400;font-size:15px;color:var(--muted)">${cur}</span></div>
+      <select class="fs" style="width:100px" onchange="changeMonthCurrency(this.value)">
+        <option value="IDR" ${cur==='IDR'?'selected':''}>IDR</option>
+        <option value="VND" ${cur==='VND'?'selected':''}>VND</option>
+        <option value="USD" ${cur==='USD'?'selected':''}>USD</option>
+      </select>
+    </div>
+    <div class="roast-bar ${r.cls}">${r.msg}</div>
+    <div class="kpi-row">
+      <div class="kpi"><div class="kpi-label">Income</div><div class="kpi-val green">${fmt(income,cur)}</div></div>
+      <div class="kpi"><div class="kpi-label">Expenses</div><div class="kpi-val red">${fmt(expenses,cur)}</div></div>
+      <div class="kpi"><div class="kpi-label">Remaining</div><div class="kpi-val ${remaining>=0?'green':'red'}">${fmt(remaining,cur)}</div></div>
+      <div class="kpi"><div class="kpi-label">Tabungan</div><div class="kpi-val teal">${fmt(savings,cur)}</div></div>
+      <div class="kpi"><div class="kpi-label">Avg Daily</div><div class="kpi-val gold">${fmt(avgDaily,cur)}</div><div class="kpi-sub">limit ${fmt(dailyBudget,cur)}/hr</div></div>
+      <div class="kpi"><div class="kpi-label">% Spent</div><div class="kpi-val ${pct>=100?'red':pct>=80?'gold':'green'}">${Math.round(pct)}%</div></div>
+    </div>
+    <div class="alloc-row">${allocPills}</div>
+    <div class="two-col">
+      <div>
+        <div class="card">
+          <div class="card-title">➕ Catat Transaksi</div>
+          <div class="type-tabs">
+            <button class="type-tab active" data-t="expense" onclick="setTxType(this,'expense')">Pengeluaran</button>
+            <button class="type-tab" data-t="income" onclick="setTxType(this,'income')">Pemasukan</button>
+            <button class="type-tab" data-t="saving" onclick="setTxType(this,'saving')">Tabungan</button>
+            <button class="type-tab" data-t="hutang" onclick="setTxType(this,'hutang')">Hutang</button>
+            <button class="type-tab" data-t="piutang" onclick="setTxType(this,'piutang')">Piutang</button>
+          </div>
+          <div class="form-row">
+            <div class="fg"><div class="fl">Nominal (${cur})</div><input class="fi" id="txAmount" type="number" min="0" placeholder="0" inputmode="numeric"></div>
+            <div class="fg" id="txCatGroup"><div class="fl">Kategori / Item</div><select class="fs" id="txCategory"></select></div>
+          </div>
+          <div class="form-row" id="txNameRow" style="display:none">
+            <div class="fg"><div class="fl" id="txNameLabel">Nama</div><input class="fi" id="txName" type="text" placeholder="Nama orang..."></div>
+          </div>
+          <div class="form-row">
+            <div class="fg"><div class="fl">Keterangan</div><input class="fi" id="txDesc" type="text" placeholder="Deskripsi..."></div>
+            <div class="fg"><div class="fl">Tanggal</div><input class="fi" id="txDate" type="date"></div>
+          </div>
+          <button class="add-btn" onclick="addTx()">+ Catat Transaksi</button>
+        </div>
+        <div class="card">
+          <div class="card-title">📋 Transaksi</div>
+          <div class="tx-filter-row">
+            <div class="tf active" onclick="setTxFilter('all',this)">Semua</div>
+            <div class="tf" onclick="setTxFilter('expense',this)">Pengeluaran</div>
+            <div class="tf" onclick="setTxFilter('income',this)">Pemasukan</div>
+            <div class="tf" onclick="setTxFilter('saving',this)">Tabungan</div>
+            <div class="tf" onclick="setTxFilter('hutang',this)">Hutang</div>
+            <div class="tf" onclick="setTxFilter('piutang',this)">Piutang</div>
+          </div>
+          <div class="tx-list" id="txList"></div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="card-title">📊 Breakdown Kategori</div>
+          <div id="catList">${buildCatList(catTotals,expenses,cur,maxCat)}</div>
+        </div>
+        <div class="card">
+          <div class="card-title">💸 Hutang & Piutang</div>
+          <div class="hp-grid">
+            <div class="hp-card"><div class="hp-title">🟣 Hutang</div><div id="hutangList"></div></div>
+            <div class="hp-card"><div class="hp-title">🔵 Piutang</div><div id="piutangList"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+
+  document.getElementById('txDate').value = new Date().toISOString().slice(0,10);
+  populateCatSelect('expense');
+  renderTxList();
+  renderHP(txs, cur);
+  mv.classList.add('active');
+}
+
+function buildCatList(catTotals, totalExp, cur, maxCat) {
+  return Object.entries(catTotals).sort((a,b)=>b[1]-a[1]).map(([k,v])=>{
+    const pct = totalExp>0?Math.round((v/totalExp)*100):0;
+    const barPct = maxCat>0?Math.round((v/maxCat)*100):0;
+    const c=CATS[k];
+    return `<div class="cat-row">
+      <div class="cat-icon">${c?.icon||'📦'}</div>
+      <div class="cat-info"><div class="cat-name">${k}</div>
+        <div class="cat-bar-wrap"><div class="cat-bar-fill" style="background:${c?.color||'#888'};width:${barPct}%"></div></div>
+      </div>
+      <div class="cat-amt" style="color:${c?.color||'#888'}">${fmt(v,cur)}</div>
+      <div class="cat-pct">${pct}%</div>
+    </div>`;
+  }).join('');
+}
+
+function renderTxList() {
+  const el = document.getElementById('txList'); if(!el) return;
+  const cur = (D.months.find(x=>x.id===activeMonth)||{}).currency||'IDR';
+  let txs = getTxs(activeMonth);
+  if(txFilter!=='all') txs=txs.filter(t=>t.type===txFilter);
+  if(!txs.length){el.innerHTML='<div class="tx-empty">Belum ada transaksi ✦</div>';return;}
+  el.innerHTML = txs.map(t=>{
+    const sign=t.type==='expense'?'−':t.type==='hutang'?'↑':t.type==='piutang'?'↓':'+';
+    const label=t.type==='expense'?(t.item||t.category):t.type==='income'?(t.item||'Pemasukan'):t.type==='saving'?'Tabungan':t.type==='hutang'?`Hutang→${t.name||'?'}`:`Piutang←${t.name||'?'}`;
+    return `<div class="tx-item">
+      <div class="tx-dot" style="background:${TYPE_COLORS[t.type]}"></div>
+      <div class="tx-body"><div class="tx-desc">${t.desc||label}</div><div class="tx-meta">${label} · ${dateFmt(t.date)}</div></div>
+      <div class="tx-amt" style="color:${TYPE_COLORS[t.type]}">${sign}${fmt(t.amount,cur)}</div>
+      <button class="tx-del" onclick="deleteTx(${t.id})">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function renderHP(txs, cur) {
+  const hEl=document.getElementById('hutangList'), pEl=document.getElementById('piutangList');
+  if(!hEl||!pEl) return;
+  const hs=txs.filter(t=>t.type==='hutang'), ps=txs.filter(t=>t.type==='piutang');
+  hEl.innerHTML=hs.length?hs.map(t=>`<div class="hp-item"><div class="hp-name">${t.name||t.desc||'?'}</div><div class="hp-amt" style="color:var(--purple)">${fmt(t.amount,cur)}</div></div>`).join(''):'<div class="hp-empty">Ga ada hutang 🎉</div>';
+  pEl.innerHTML=ps.length?ps.map(t=>`<div class="hp-item"><div class="hp-name">${t.name||t.desc||'?'}</div><div class="hp-amt" style="color:var(--blue)">${fmt(t.amount,cur)}</div></div>`).join(''):'<div class="hp-empty">Ga ada piutang</div>';
+}
+
+// ─── TX ACTIONS ──────────────────────────────────────────────
+function setTxType(btn, type) {
+  currentTxType=type;
+  document.querySelectorAll('.type-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  populateCatSelect(type);
+  const nr=document.getElementById('txNameRow'), nl=document.getElementById('txNameLabel'), cg=document.getElementById('txCatGroup');
+  if(type==='hutang'||type==='piutang'){nr.style.display='';nl.textContent=type==='hutang'?'Hutang ke Siapa':'Piutang dari Siapa';cg.style.display='none';}
+  else{nr.style.display='none';cg.style.display='';}
+}
+
+function populateCatSelect(type) {
+  const sel=document.getElementById('txCategory'); if(!sel) return;
+  sel.innerHTML='';
+  if(type==='expense'){
+    Object.entries(CATS).filter(([k])=>k!=='earning').forEach(([cat,data])=>{
+      data.items.forEach(item=>{const o=document.createElement('option');o.value=cat+'|'+item;o.textContent=`${data.icon} ${cat} — ${item}`;sel.appendChild(o);});
+    });
+  } else if(type==='income'){
+    CATS.earning.items.forEach(item=>{const o=document.createElement('option');o.value='earning|'+item;o.textContent='💵 '+item;sel.appendChild(o);});
+  } else {
+    ['Tabungan','Transfer'].forEach(item=>{const o=document.createElement('option');o.value='saving|'+item;o.textContent=item;sel.appendChild(o);});
+  }
+}
+
+async function addTx() {
+  const amount = parseFloat(document.getElementById('txAmount').value);
+  if(!amount||amount<=0){alert('Isi nominal dulu!');return;}
+  const date=document.getElementById('txDate').value||new Date().toISOString().slice(0,10);
+  const desc=document.getElementById('txDesc').value.trim();
+  const name=(document.getElementById('txName')||{}).value?.trim()||'';
+  const cur=(D.months.find(x=>x.id===activeMonth)||{}).currency||'IDR';
+  let category='Home',item='';
+  if(currentTxType!=='hutang'&&currentTxType!=='piutang'){
+    const [cat,it]=(document.getElementById('txCategory').value||'').split('|');
+    category=cat||'Home';item=it||'';
+  }
+  const tx={id:Date.now(),month:activeMonth,type:currentTxType,amount,currency:cur,category,item,desc,name,date};
+  if(!D.transactions[activeMonth]) D.transactions[activeMonth]=[];
+  D.transactions[activeMonth].unshift(tx);
+  saveLocal();
+  document.getElementById('txAmount').value='';
+  document.getElementById('txDesc').value='';
+  if(document.getElementById('txName')) document.getElementById('txName').value='';
+  renderMonth();
+  showToast('Transaksi dicatat!');
+  pushTx(tx); // push to sheets in background
+}
+
+async function deleteTx(id) {
+  if(!D.transactions[activeMonth]) return;
+  D.transactions[activeMonth]=D.transactions[activeMonth].filter(t=>t.id!==id);
+  saveLocal(); renderMonth();
+  deleteTxRemote(id);
+}
+
+function setTxFilter(f,btn){txFilter=f;document.querySelectorAll('.tf').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderTxList();}
+function changeMonthCurrency(cur){const m=D.months.find(x=>x.id===activeMonth);if(m){m.currency=cur;saveLocal();renderMonth();}}
+
+// ─── ANNUAL ──────────────────────────────────────────────────
+function buildAnnualShell() {
+  return `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+      <div style="font-family:'Syne',sans-serif;font-size:26px;font-weight:800">Annual Report <span style="font-weight:400;font-size:16px;color:var(--muted)">2026</span></div>
+      <select class="fs" style="width:100px" id="annualCurrency" onchange="renderAnnual()"><option value="IDR">IDR</option><option value="VND">VND</option><option value="USD">USD</option></select>
+    </div>
+    <div class="annual-kpi" id="annualKpi"></div>
+    <div class="chart-card"><div class="chart-title">Income vs Expenses — Bulanan</div><div class="chart-wrap"><canvas id="annualChart"></canvas></div></div>
+    <div class="chart-card"><div class="chart-title">Breakdown per Kategori</div><div class="chart-wrap" style="height:300px"><canvas id="annualCatChart"></canvas></div></div>
+    <div class="annual-cat-grid" id="annualCatGrid"></div>`;
+}
+
+function renderAnnual() {
+  const displayCur = document.getElementById('annualCurrency')?.value||'IDR';
+  let totalIncome=0,totalExpenses=0,totalSavings=0;
+  const monthly=[];
+  const catAgg={};
+  Object.keys(CATS).filter(k=>k!=='earning').forEach(k=>catAgg[k]=0);
+  D.months.forEach(m=>{
+    const txs=getTxs(m.id), mCur=m.currency||'IDR';
+    const inc=txs.filter(t=>t.type==='income').reduce((s,t)=>s+toIDR(t.amount,mCur),0);
+    const exp=txs.filter(t=>t.type==='expense').reduce((s,t)=>s+toIDR(t.amount,mCur),0);
+    const sav=txs.filter(t=>t.type==='saving').reduce((s,t)=>s+toIDR(t.amount,mCur),0);
+    totalIncome+=inc;totalExpenses+=exp;totalSavings+=sav;
+    monthly.push({label:m.label.split(' ')[0],inc,exp,sav});
+    txs.filter(t=>t.type==='expense').forEach(t=>{catAgg[t.category]=(catAgg[t.category]||0)+toIDR(t.amount,mCur);});
+  });
+  const balance=totalIncome-totalExpenses;
+  const pct=totalIncome>0?Math.round((totalExpenses/totalIncome)*100):0;
+  document.getElementById('annualKpi').innerHTML=`
+    <div class="kpi"><div class="kpi-label">Total Income</div><div class="annual-big green">${fmt(fromIDR(totalIncome,displayCur),displayCur)}</div></div>
+    <div class="kpi"><div class="kpi-label">Total Expenses</div><div class="annual-big red">${fmt(fromIDR(totalExpenses,displayCur),displayCur)}</div></div>
+    <div class="kpi"><div class="kpi-label">Balance</div><div class="annual-big ${balance>=0?'green':'red'}">${fmt(fromIDR(balance,displayCur),displayCur)}</div></div>
+    <div class="kpi"><div class="kpi-label">Total Tabungan</div><div class="annual-big teal">${fmt(fromIDR(totalSavings,displayCur),displayCur)}</div></div>
+    <div class="kpi"><div class="kpi-label">% Spent</div><div class="annual-big ${pct>=100?'red':pct>=80?'warn':'green'}">${pct}%</div></div>
+    <div class="kpi"><div class="kpi-label">Avg/Bulan</div><div class="annual-big warn">${fmt(fromIDR(totalExpenses/(D.months.length||1),displayCur),displayCur)}</div></div>`;
+  // Charts
+  if(annualChartInst){annualChartInst.destroy();annualChartInst=null;}
+  const ac=document.getElementById('annualChart');
+  if(ac) annualChartInst=new Chart(ac,{type:'bar',data:{labels:monthly.map(x=>x.label),datasets:[
+    {label:'Income',data:monthly.map(x=>fromIDR(x.inc,displayCur)),backgroundColor:'rgba(46,204,113,.7)',borderRadius:5},
+    {label:'Expenses',data:monthly.map(x=>fromIDR(x.exp,displayCur)),backgroundColor:'rgba(231,76,60,.7)',borderRadius:5},
+    {label:'Tabungan',data:monthly.map(x=>fromIDR(x.sav,displayCur)),backgroundColor:'rgba(26,188,156,.5)',borderRadius:5},
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#f0f0f8',font:{family:'Nunito',size:11}}}},scales:{x:{ticks:{color:'#7070a0'},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{color:'#7070a0',callback:v=>fmt(v,displayCur)},grid:{color:'rgba(255,255,255,.06)'}}}}});
+  if(annualCatChartInst){annualCatChartInst.destroy();annualCatChartInst=null;}
+  const entries=Object.entries(catAgg).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+  const cc=document.getElementById('annualCatChart');
+  if(cc) annualCatChartInst=new Chart(cc,{type:'doughnut',data:{labels:entries.map(([k])=>k),datasets:[{data:entries.map(([,v])=>fromIDR(v,displayCur)),backgroundColor:entries.map(([k])=>CATS[k]?.color||'#888'),borderWidth:2,borderColor:'#16161d'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#f0f0f8',font:{family:'Nunito',size:11},padding:12}}}}});
+  const g=document.getElementById('annualCatGrid');
+  if(g) g.innerHTML=entries.map(([k,v])=>{const c=CATS[k];const p=totalExpenses>0?Math.round((v/totalExpenses)*100):0;const budget=D.alloc[k]?(D.alloc[k]/100)*totalIncome:0;const over=budget>0&&v>budget;return `<div class="annual-cat-card" style="border-left:3px solid ${c?.color||'#888'}"><div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:6px">${c?.icon||''} ${k}</div><div style="font-family:'Syne',sans-serif;font-size:19px;font-weight:800;color:${c?.color||'#888'};margin-bottom:4px">${fmt(fromIDR(v,displayCur),displayCur)}</div><div style="font-size:11px;color:var(--muted)">${p}% dari total ${over?'🔴 over budget':''}</div>${budget>0?`<div style="font-size:10px;color:var(--muted2);margin-top:3px;font-family:'DM Mono',monospace">Budget: ${fmt(fromIDR(budget,displayCur),displayCur)}</div>`:''}</div>`;}).join('');
+}
+
+// ─── SETTINGS ────────────────────────────────────────────────
+function buildSettingsShell() {
+  return `
+    <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin-bottom:18px">⚙ Settings</div>
+    <div class="card">
+      <div class="card-title">🔗 Google Sheets URL</div>
+      <div class="setup-url-row">
+        <input class="setup-url-input" id="sheetsUrlSettings" placeholder="https://script.google.com/macros/s/XXXXX/exec" style="max-width:100%">
+        <button class="setup-save-btn" onclick="saveSheetUrlSettings()">Simpan</button>
+      </div>
+      <div style="margin-top:8px;font-size:11px;color:var(--muted)">Setelah setup Apps Script di Sheets, paste URL Web App di sini.</div>
+    </div>
+    <div class="card">
+      <div class="card-title">💱 Exchange Rates (ke IDR)</div>
+      <div class="fx-grid">
+        <div class="fx-pair"><div class="fx-label">1 VND = ? IDR</div><input class="fi" id="fxVND" type="number" step="0.0001"></div>
+        <div class="fx-pair"><div class="fx-label">1 USD = ? IDR</div><input class="fi" id="fxUSD" type="number"></div>
+      </div>
+      <button class="save-fx-btn" onclick="saveFX()">Simpan FX</button>
+    </div>
+    <div class="card">
+      <div class="card-title">💼 Salary</div>
+      <div class="form-row">
+        <div class="fg"><div class="fl">Nominal</div><input class="fi" id="salaryInput" type="number"></div>
+        <div class="fg"><div class="fl">Currency</div><select class="fs" id="salaryCur"><option value="IDR">IDR</option><option value="VND">VND</option><option value="USD">USD</option></select></div>
+      </div>
+      <button class="save-fx-btn" onclick="saveSalary()">Simpan Salary</button>
+    </div>
+    <div class="card">
+      <div class="card-title">🗂 Budget Allocation</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:10px">Total harus 100%</div>
+      <div id="allocInputs"></div>
+      <button class="save-fx-btn" onclick="saveAlloc()">Simpan Alokasi</button>
+    </div>
+    <div class="card">
+      <div class="card-title">📅 Kelola Bulan</div>
+      <div id="monthManager"></div>
+      <button class="save-fx-btn" onclick="addNewMonth()" style="margin-top:10px">+ Tambah Bulan</button>
+    </div>`;
+}
+
+function renderSettings() {
+  const sv=document.getElementById('view-settings'); if(!sv) return;
+  document.getElementById('sheetsUrlSettings') && (document.getElementById('sheetsUrlSettings').value=sheetsUrl);
+  document.getElementById('fxVND') && (document.getElementById('fxVND').value=D.fx.VND);
+  document.getElementById('fxUSD') && (document.getElementById('fxUSD').value=D.fx.USD);
+  document.getElementById('salaryInput') && (document.getElementById('salaryInput').value=D.salary.amount);
+  document.getElementById('salaryCur') && (document.getElementById('salaryCur').value=D.salary.currency);
+  const ai=document.getElementById('allocInputs');
+  if(ai) ai.innerHTML=Object.entries(D.alloc).map(([k,v])=>`<div style="display:flex;align-items:center;gap:10px;margin-bottom:7px"><div style="font-size:12.5px;min-width:110px;font-weight:600">${CATS[k]?.icon||''} ${k}</div><input class="fi" style="width:70px" id="alloc_${k}" type="number" min="0" max="100" value="${v}"><div style="font-size:11px;color:var(--muted)">%</div></div>`).join('');
+  const mm=document.getElementById('monthManager');
+  if(mm) mm.innerHTML=D.months.map((m,i)=>`<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px"><input class="fi" style="flex:1;max-width:130px" value="${m.label}" onchange="renameMonth(${i},this.value)"><select class="fs" style="width:85px" onchange="changeMCur(${i},this.value)"><option value="IDR" ${m.currency==='IDR'?'selected':''}>IDR</option><option value="VND" ${m.currency==='VND'?'selected':''}>VND</option><option value="USD" ${m.currency==='USD'?'selected':''}>USD</option></select><button onclick="removeMonth(${i})" style="background:none;border:1px solid var(--danger);color:var(--danger);padding:4px 9px;border-radius:6px;cursor:pointer;font-size:11px">✕</button></div>`).join('');
+}
+
+function saveSheetUrlSettings() {
+  const url=(document.getElementById('sheetsUrlSettings')||{}).value?.trim();
+  if(!url){alert('URL kosong!');return;}
+  sheetsUrl=url; localStorage.setItem(URL_KEY,url);
+  document.getElementById('setupBanner').classList.add('hidden');
+  document.getElementById('sheetsUrl') && (document.getElementById('sheetsUrl').value=url);
+  showToast('URL Sheets tersimpan!'); setSyncStatus('idle');
+}
+
+function saveFX(){D.fx.VND=parseFloat(document.getElementById('fxVND').value)||D.fx.VND;D.fx.USD=parseFloat(document.getElementById('fxUSD').value)||D.fx.USD;saveLocal();showToast('Exchange rate disimpan!');}
+function saveSalary(){D.salary.amount=parseFloat(document.getElementById('salaryInput').value)||0;D.salary.currency=document.getElementById('salaryCur').value;saveLocal();showToast('Salary disimpan!');}
+function saveAlloc(){let t=0;Object.keys(D.alloc).forEach(k=>{const v=parseFloat(document.getElementById('alloc_'+k)?.value)||0;D.alloc[k]=v;t+=v;});if(Math.abs(t-100)>1){alert(`Total = ${t}%, harus 100%!`);return;}saveLocal();showToast('Alokasi disimpan!');}
+function renameMonth(i,v){D.months[i].label=v;saveLocal();buildNav();}
+function changeMCur(i,v){D.months[i].currency=v;saveLocal();}
+function removeMonth(i){if(!confirm('Hapus bulan ini?'))return;const id=D.months[i].id;D.months.splice(i,1);delete D.transactions[id];saveLocal();renderSettings();buildNav();}
+function addNewMonth(){const label=prompt('Label bulan (contoh: Apr 2026):');if(!label)return;const n=D.months.length+1;const id=`2026-${String(n).padStart(2,'0')}`;D.months.push({id,label,currency:'IDR'});saveLocal();renderSettings();buildNav();}
+
+// ─── TOAST ───────────────────────────────────────────────────
+function showToast(msg){const t=document.getElementById('toast');t.textContent='✓ '+msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
+
+// ─── INIT ────────────────────────────────────────────────────
+load();
+ensureViews();
+buildNav();
+renderMonth();
+showView('month');
+</script>
+</body>
+</html>
