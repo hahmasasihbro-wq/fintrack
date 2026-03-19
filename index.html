@@ -297,16 +297,36 @@ function closeImportModal() {
   document.getElementById('importJson').value = '';
 }
 
+function normalizeMonthId(rawId) {
+  // Kalau udah format YYYY-MM atau YYYY-IDR, langsung return
+  if (/^\d{4}-\d{2}$/.test(rawId) || rawId.includes('IDR')) return rawId;
+  // Kalau format "Thu Jan 01 2026 00:00:00 GMT+0700..."
+  try {
+    const d = new Date(rawId);
+    if (!isNaN(d)) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      return `${y}-${m}`;
+    }
+  } catch(e) {}
+  return rawId;
+}
+
 function doImport() {
   let raw = document.getElementById('importJson').value.trim();
   if(!raw) { alert('Paste JSON dulu!'); return; }
-  // Strip JSONP wrapper kalau ada: test({...}) → {...}
   raw = raw.replace(/^[a-zA-Z_$][a-zA-Z0-9_$]*\s*\(/, '').replace(/\)\s*;?\s*$/, '');
   let data;
   try { data = JSON.parse(raw); } catch(e) { alert('Format tidak valid. Copy semua teks dari halaman browser ya.'); return; }
   if(data.transactions) {
-    Object.entries(data.transactions).forEach(([month, txs]) => {
-      D.transactions[month] = (txs||[]).map(t => ({...t, amount:parseFloat(t.amount)||0, id:parseInt(t.id)||Date.now()}));
+    Object.entries(data.transactions).forEach(([rawMonthId, txs]) => {
+      const monthId = normalizeMonthId(rawMonthId);
+      D.transactions[monthId] = (txs||[]).map(t => ({
+        ...t,
+        month: monthId,
+        amount: parseFloat(t.amount)||0,
+        id: parseInt(t.id)||Date.now()
+      }));
     });
   }
   if(data.settings) {
